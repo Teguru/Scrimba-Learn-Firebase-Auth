@@ -1,6 +1,13 @@
 /* === Imports === */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.10.0/firebase-auth.min.js";
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, onAuthStateChanged, 
+    GoogleAuthProvider, 
+    signInWithPopup,
+    updateProfile } from "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.10.0/firebase-auth.min.js";
 
 /* === Firebase Setup === */
 const firebaseConfig = {
@@ -12,6 +19,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 /* === UI === */
 
@@ -30,6 +38,14 @@ const createAccountButtonEl = document.getElementById("create-account-btn")
 
 const signOutButtonEl = document.getElementById("sign-out-btn")
 
+const userProfilePictureEl = document.getElementById("user-profile-picture")
+
+const userGreetingEl = document.getElementById("user-greeting")
+
+const displayNameInputEl = document.getElementById("display-name-input")
+const photoURLInputEl = document.getElementById("photo-url-input")
+const updateProfileButtonEl = document.getElementById("update-profile-btn")
+
 /* == UI - Event Listeners == */
 
 signInWithGoogleButtonEl.addEventListener("click", authSignInWithGoogle)
@@ -39,23 +55,15 @@ createAccountButtonEl.addEventListener("click", authCreateAccountWithEmail)
 
 signOutButtonEl.addEventListener("click", authSignOut)
 
+updateProfileButtonEl.addEventListener("click", authUpdateProfile)
+
 /* === Main Code === */
-
-/*  Challenge:
-    Import the onAuthStateChanged function from 'firebase/auth'
-
-    Use the code from the documentaion to make this work.
-    
-    Use onAuthStateChanged to:
-    
-    Show the logged in view when the user is logged in using showLoggedInView()
-    
-    Show the logged out view when the user is logged out using showLoggedOutView()
-*/
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
         showLoggedInView()
+        showProfilePicture(userProfilePictureEl, user)
+        showUserGreeting(userGreetingEl, user)
     } else {
         showLoggedOutView()
     }
@@ -67,7 +75,12 @@ onAuthStateChanged(auth, (user) => {
 /* = Functions - Firebase - Authentication = */
 
 function authSignInWithGoogle() {
-    console.log("Sign in with Google")
+        signInWithPopup(auth, provider)
+        .then((result) => {
+          console.log("Signed in with Google")
+        }).catch((error) => {
+          console.error(error.message)
+        });
 }
 
 function authSignInWithEmail() {
@@ -99,18 +112,37 @@ function authCreateAccountWithEmail() {
 }
 
 function authSignOut() {
-    /*  Challenge:
-        Import the signOut function from 'firebase/auth'
- 
-        Use the code from the documentaion to make this function work.
-       
-        If the log out is successful then you should show the logged out view using showLoggedOutView()
-        If something went wrong, then you should log the error message using console.error.
-    */
     signOut(auth).then(() => {
     }).catch((error) => {
         console.error(error.message)
     });
+}
+
+function authUpdateProfile() {
+    /*  Challenge:
+        Import the updateProfile function from 'firebase/auth'
+    
+        Use the documentation to make this function work.
+        
+        Make sure to first create two consts, 'newDisplayName' and 'newPhotoURL', to fetch the values from the input fields displayNameInputEl and photoURLInputEl.
+        
+        If the updating of profile is successful then you should console log "Profile updated".
+        If something went wrong, then you should log the error message using console.error
+        
+        Resources:
+        Justin Bieber profile picture URL: https://i.imgur.com/6GYlSed.jpg
+    */
+        const newDisplayName = displayNameInputEl.value
+        const newPhotoURL = photoURLInputEl.value
+        
+        updateProfile(auth.currentUser, {
+                displayName: newDisplayName,
+                photoURL: newPhotoURL
+            }).then(() => {
+                console.log("Profile updated")
+            }).catch((error) => {
+                console.error(error.message)
+            })
 }
 
 /* == Functions - UI Functions == */
@@ -140,4 +172,27 @@ function clearInputField(field) {
 function clearAuthFields() {
     clearInputField(emailInputEl)
     clearInputField(passwordInputEl)
+}
+
+function showProfilePicture(imgElement, user) {
+        const photoURL = user.photoURL
+    
+        if (photoURL) {
+            imgElement.src = photoURL
+        } else {
+            imgElement.src = "assets/images/default-profile-picture.jpeg"
+        }
+}
+
+function showUserGreeting(element, user) {
+
+        const displayName = user.displayName
+    
+        if (displayName) {
+            const userFirstName = displayName.split(" ")[0]
+            
+            element.textContent = `Hey ${userFirstName}, how are you?`
+        } else {
+            element.textContent = `Hey friend, how are you?`
+        }
 }
